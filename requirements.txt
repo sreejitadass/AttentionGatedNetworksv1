@@ -1,0 +1,13 @@
+numpy
+torch
+matplotlib
+scipy
+torchvision
+tqdm
+visdom
+nibabel
+scikit-image
+h5py
+pandas
+dominate
+torchsample
