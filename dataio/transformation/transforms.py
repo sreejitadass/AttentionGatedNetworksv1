@@ -1,4 +1,4 @@
-import torchsample.transforms as ts
+import torchsample as ts
 from pprint import pprint
 
 

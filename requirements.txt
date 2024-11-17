@@ -10,4 +10,4 @@ scikit-image
 h5py
 pandas
 dominate
-torchsample
+torchsample==0.1.0
