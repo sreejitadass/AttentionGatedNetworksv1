@@ -23,5 +23,11 @@ Pytorch implementation of attention gates used in U-Net and VGG-16 models. The f
 [Conference Poster](https://www.doc.ic.ac.uk/~oo2113/posters/MIDL2018_poster.pdf)
 
 ### Installation
-pip install --process-dependency-links -e .
+pip install -r requirements.txt
+pip install -e .
+
+After the packages are installed, go to the torchsample/callbacks.py file in your site packages and change the following import line
+from collections import Iterable
+to
+from collections.abc import Iterable
 
