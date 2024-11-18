@@ -2,6 +2,7 @@ import numpy
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import matplotlib.pyplot as plt
 
 from dataio.loader import get_dataset, get_dataset_path
 from dataio.transformation import get_dataset_transformation
@@ -12,7 +13,6 @@ from utils.error_logger import ErrorLogger
 from models import get_model
 
 def train(arguments):
-
     # Parse input arguments
     json_filename = arguments.config
     network_debug = arguments.debug
@@ -31,18 +31,31 @@ def train(arguments):
 
     # Setup the NN Model
     model = get_model(json_opts.model)
-    if network_debug:
-        print('# of pars: ', model.get_number_parameters())
-        print('fp time: {0:.3f} sec\tbp time: {1:.3f} sec per sample'.format(*model.get_fp_bp_time2()))
-        exit()
+    # if network_debug:
+    #     print('# of pars: ', model.get_number_parameters())
+    #     print('fp time: {0:.3f} sec\tbp time: {1:.3f} sec per sample'.format(*model.get_fp_bp_time2()))
+    #     exit()
 
     # Setup Data Loader
     train_dataset = ds_class(ds_path, split='train',      transform=ds_transform['train'], preload_data=train_opts.preloadData)
-    valid_dataset = ds_class(ds_path, split='validation', transform=ds_transform['valid'], preload_data=train_opts.preloadData)
+    valid_dataset = ds_class(ds_path, split='val',      transform=ds_transform['valid'], preload_data=train_opts.preloadData)
     test_dataset  = ds_class(ds_path, split='test',       transform=ds_transform['valid'], preload_data=train_opts.preloadData)
-    train_loader = DataLoader(dataset=train_dataset, num_workers=16, batch_size=train_opts.batchSize, shuffle=True)
-    valid_loader = DataLoader(dataset=valid_dataset, num_workers=16, batch_size=train_opts.batchSize, shuffle=False)
-    test_loader  = DataLoader(dataset=test_dataset,  num_workers=16, batch_size=train_opts.batchSize, shuffle=False)
+    
+    train_loader = DataLoader(dataset=train_dataset, num_workers=0, batch_size=train_opts.batchSize, shuffle=True)
+    valid_loader = DataLoader(dataset=valid_dataset, num_workers=0, batch_size=train_opts.batchSize, shuffle=False)
+    test_loader  = DataLoader(dataset=test_dataset,  num_workers=0, batch_size=train_opts.batchSize, shuffle=False)
+
+    # Get the first image from the dataset
+    first_img = train_loader.dataset[0][0]
+
+    image_np = first_img.permute(1, 2, 0).numpy()
+
+    # Display the image using matplotlib
+    plt.imshow(image_np)
+    plt.axis('off')  # Turn off axis
+    plt.show()
+
+    return
 
     # Visualisation Parameters
     visualizer = Visualiser(json_opts.visualisation, save_dir=model.save_dir)
