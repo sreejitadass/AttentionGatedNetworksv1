@@ -24,15 +24,13 @@ def train(arguments):
     # Architecture type
     arch_type = train_opts.arch_type
 
-    print(json_opts)
-
     # Setup Dataset and Augmentation
     ds_class = get_dataset(arch_type)
     ds_path  = get_dataset_path(arch_type, json_opts.data_path)
     ds_transform = get_dataset_transformation(arch_type, opts=json_opts.augmentation)
 
     # Setup the NN Model
-    model = get_model(json_opts.model)
+    # model = get_model(json_opts.model)
     # if network_debug:
     #     print('# of pars: ', model.get_number_parameters())
     #     print('fp time: {0:.3f} sec\tbp time: {1:.3f} sec per sample'.format(*model.get_fp_bp_time2()))
@@ -47,15 +45,15 @@ def train(arguments):
     valid_loader = DataLoader(dataset=valid_dataset, num_workers=0, batch_size=train_opts.batchSize, shuffle=False)
     test_loader  = DataLoader(dataset=test_dataset,  num_workers=0, batch_size=train_opts.batchSize, shuffle=False)
 
-    # Get the first image from the dataset
-    first_img = train_loader.dataset[0][0]
+    # # Get the first image from the dataset
+    first_img = train_loader.dataset[0]
 
-    image_np = first_img.permute(1, 2, 0).numpy()
+    # image_np = first_img.permute(1, 2, 0).numpy()
 
-    # Display the image using matplotlib
-    plt.imshow(image_np)
-    plt.axis('off')  # Turn off axis
-    plt.show()
+    # # Display the image using matplotlib
+    # plt.imshow(image_np)
+    # plt.axis('off')  # Turn off axis
+    # plt.show()
 
     return
 

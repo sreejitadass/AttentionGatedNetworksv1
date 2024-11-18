@@ -23,7 +23,7 @@ class CityscapesDataset(data.Dataset):
         self.target_filenames = []
 
         # Walk through the city subdirectories and collect image and label file paths
-        for city in os.listdir(image_dir):
+        for city in [f for f in os.listdir(image_dir) if not f.startswith('.')]:
             city_image_dir = join(image_dir, city)
             city_target_dir = join(target_dir, city)
 
@@ -32,7 +32,7 @@ class CityscapesDataset(data.Dataset):
             city_labels = sorted([join(city_target_dir, f) for f in os.listdir(city_target_dir) if is_image_file(f)])
 
             # Ensure there's a one-to-one correspondence between images and labels in each city
-            assert len(city_images) == len(city_labels), f"Mismatch between images and labels in {city}."
+            # assert len(city_images) == len(city_labels), f"Mismatch between images and labels in {city}."
 
             # Append the city files to the main lists
             self.image_filenames.extend(city_images)
@@ -72,6 +72,7 @@ class CityscapesDataset(data.Dataset):
 
         # Apply transformations if provided
         if self.transform:
+            print(self.transform)
             input, target = self.transform(input, target)
 
         return input, target

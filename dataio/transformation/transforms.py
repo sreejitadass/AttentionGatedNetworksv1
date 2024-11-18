@@ -47,8 +47,8 @@ class Transformations:
 
     def pad_to_size(self, size):
         def pad(image):
-            pad_h = max(0, size[0] - image.shape[-2])
-            pad_w = max(0, size[1] - image.shape[-1])
+            pad_h = max(0, size[0] - image.size[-2])
+            pad_w = max(0, size[1] - image.size[-1])
             padding = (pad_w // 2, pad_w - pad_w // 2, pad_h // 2, pad_h - pad_h // 2)
             return T.functional.pad(image, padding)
         return pad
