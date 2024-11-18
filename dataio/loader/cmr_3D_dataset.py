@@ -6,7 +6,6 @@ from os import listdir
 from os.path import join
 from .utils import load_nifti_img, check_exceptions, is_image_file
 
-
 class CMR3DDataset(data.Dataset):
     def __init__(self, root_dir, split, transform=None, preload_data=False):
         super(CMR3DDataset, self).__init__()

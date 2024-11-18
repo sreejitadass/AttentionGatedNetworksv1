@@ -31,7 +31,7 @@ class FeedForwardSegmentation(BaseModel):
                                in_channels=opts.input_nc, nonlocal_mode=opts.nonlocal_mode,
                                tensor_dim=opts.tensor_dim, feature_scale=opts.feature_scale,
                                attention_dsample=opts.attention_dsample)
-        if self.use_cuda: self.net = self.net.cuda()
+        if self.use_cuda: self.net = self.net.cpu()
 
         # load the model if a path is specified or it is in inference mode
         if not self.isTrain or opts.continue_train:
@@ -73,9 +73,9 @@ class FeedForwardSegmentation(BaseModel):
 
             # Define that it's a cuda array
             if idx == 0:
-                self.input = _input.cuda() if self.use_cuda else _input
+                self.input = _input.cpu() if self.use_cuda else _input
             elif idx == 1:
-                self.target = Variable(_input.cuda()) if self.use_cuda else Variable(_input)
+                self.target = Variable(_input.cpu()) if self.use_cuda else Variable(_input)
                 assert self.input.size() == self.target.size()
 
     def forward(self, split):
@@ -141,12 +141,12 @@ class FeedForwardSegmentation(BaseModel):
         return feature_extractor.forward(Variable(self.input))
 
     # returns the fp/bp times of the model
-    def get_fp_bp_time (self, size=None):
+    def get_fp_bp_time2(self, size=None):
         if size is None:
             size = (1, 1, 160, 160, 96)
 
-        inp_array = Variable(torch.zeros(*size)).cuda()
-        out_array = Variable(torch.zeros(*size)).cuda()
+        inp_array = Variable(torch.zeros(*size)).cpu()
+        out_array = Variable(torch.zeros(*size)).cpu()
         fp, bp = benchmark_fp_bp_time(self.net, inp_array, out_array)
 
         bsize = size[0]

@@ -33,7 +33,7 @@ def train(arguments):
     model = get_model(json_opts.model)
     if network_debug:
         print('# of pars: ', model.get_number_parameters())
-        print('fp time: {0:.3f} sec\tbp time: {1:.3f} sec per sample'.format(*model.get_fp_bp_time()))
+        print('fp time: {0:.3f} sec\tbp time: {1:.3f} sec per sample'.format(*model.get_fp_bp_time2()))
         exit()
 
     # Setup Data Loader
@@ -96,12 +96,19 @@ def train(arguments):
 
 
 if __name__ == '__main__':
-    import argparse
+    # import argparse
 
-    parser = argparse.ArgumentParser(description='CNN Seg Training Function')
+    # parser = argparse.ArgumentParser(description='CNN Seg Training Function')
 
-    parser.add_argument('-c', '--config',  help='training config file', required=True)
-    parser.add_argument('-d', '--debug',   help='returns number of parameters and bp/fp runtime', action='store_true')
-    args = parser.parse_args()
+    # parser.add_argument('-c', '--config',  help='training config file', required=True)
+    # parser.add_argument('-d', '--debug',   help='returns number of parameters and bp/fp runtime', action='store_true')
+    # args = parser.parse_args()
+
+    class Args:
+        config = "configs/config_unet_ct_dsv.json"
+        debug = True
+
+    # Create an instance of the Args class
+    args = Args()
 
     train(args)

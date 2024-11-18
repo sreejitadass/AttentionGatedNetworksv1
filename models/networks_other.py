@@ -200,10 +200,10 @@ def get_n_parameters(net):
 
 def measure_fp_bp_time(model, x, y):
     # synchronize gpu time and measure fp
-    torch.cuda.synchronize()
+    torch.cpu.synchronize()
     t0 = time.time()
     y_pred = model(x)
-    torch.cuda.synchronize()
+    torch.cpu.synchronize()
     elapsed_fp = time.time() - t0
 
     if isinstance(y_pred, tuple):
@@ -216,14 +216,14 @@ def measure_fp_bp_time(model, x, y):
     t0 = time.time()
     #y_pred.backward(y)
     y_pred.backward()
-    torch.cuda.synchronize()
+    torch.cpu.synchronize()
     elapsed_bp = time.time() - t0
     return elapsed_fp, elapsed_bp
 
 
 def benchmark_fp_bp_time(model, x, y, n_trial=1000):
     # transfer the model on GPU
-    model.cuda()
+    model.cpu()
 
     # DRY RUNS
     for i in range(10):
