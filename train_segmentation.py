@@ -24,6 +24,8 @@ def train(arguments):
     # Architecture type
     arch_type = train_opts.arch_type
 
+    print(json_opts)
+
     # Setup Dataset and Augmentation
     ds_class = get_dataset(arch_type)
     ds_path  = get_dataset_path(arch_type, json_opts.data_path)
@@ -38,7 +40,7 @@ def train(arguments):
 
     # Setup Data Loader
     train_dataset = ds_class(ds_path, split='train',      transform=ds_transform['train'], preload_data=train_opts.preloadData)
-    valid_dataset = ds_class(ds_path, split='val',      transform=ds_transform['valid'], preload_data=train_opts.preloadData)
+    valid_dataset = ds_class(ds_path, split='val',        transform=ds_transform['valid'], preload_data=train_opts.preloadData)
     test_dataset  = ds_class(ds_path, split='test',       transform=ds_transform['valid'], preload_data=train_opts.preloadData)
     
     train_loader = DataLoader(dataset=train_dataset, num_workers=0, batch_size=train_opts.batchSize, shuffle=True)

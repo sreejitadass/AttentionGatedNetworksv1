@@ -10,17 +10,17 @@ class Transformations:
         self.name = name
 
         # Input patch and scale size
-        self.scale_size = (192, 192, 1)
-        self.patch_size = (128, 128, 1)
+        self.scale_size = (192, 192)
+        self.patch_size = (128, 128)
 
         # Affine and Intensity Transformations
         self.shift_val = (0.1, 0.1)
         self.rotate_val = 15.0
         self.scale_val = (0.7, 1.3)
-        self.random_flip_prob = 0.0
+        self.random_flip_prob = 0.5
 
         # Divisibility factor for testing
-        self.division_factor = (16, 16, 1)
+        self.division_factor = (16, 16)
 
     def initialise(self, opts):
         """
@@ -42,11 +42,7 @@ class Transformations:
 
     def get_transformation(self):
         return {
-            'ukbb_sax': self.cmr_3d_sax_transform,
-            'hms_sax':  self.hms_sax_transform,
-            'test_sax': self.test_3d_sax_transform,
-            'acdc_sax': self.cmr_3d_sax_transform,
-            'us':       self.ultrasound_transform,
+            'cityscapes': self.cityscapes_transform,
         }[self.name]()
 
     def pad_to_size(self, size):
@@ -78,81 +74,31 @@ class Transformations:
             return image
         return normalise
 
-    def cmr_3d_sax_transform(self):
+    def cityscapes_transform(self):
+        """
+        Apply transformations for Cityscapes dataset: resizing, flipping, affine transformations, and normalizing.
+        """
         train_transform = T.Compose([
-            self.pad_to_size(self.scale_size[:2]),
-            T.ToTensor(),
-            T.RandomHorizontalFlip(p=self.random_flip_prob),
-            T.RandomVerticalFlip(p=self.random_flip_prob),
+            self.pad_to_size(self.scale_size),  # Pad image to the target size
+            T.ToTensor(),  # Convert to tensor
+            T.RandomHorizontalFlip(p=self.random_flip_prob),  # Random horizontal flip
+            T.RandomVerticalFlip(p=self.random_flip_prob),  # Random vertical flip
             T.RandomAffine(
                 degrees=self.rotate_val,
                 translate=self.shift_val,
                 scale=self.scale_val,
                 interpolation=T.InterpolationMode.BILINEAR
             ),
-            self.normalise_percentile(),
-            T.Lambda(lambda x: x.unsqueeze(0)),  # Add channel
-            T.RandomCrop(self.patch_size[:2]),
+            self.normalise_percentile(),  # Normalize using percentile
+            T.Lambda(lambda x: x.unsqueeze(0)),  # Add channel dimension
+            T.RandomCrop(self.patch_size),  # Random crop to patch size
         ])
 
         valid_transform = T.Compose([
-            self.pad_to_size(self.scale_size[:2]),
-            T.ToTensor(),
-            self.normalise_percentile(),
-            self.crop_to_size(self.patch_size[:2]),
+            self.pad_to_size(self.scale_size),  # Pad image to the target size
+            T.ToTensor(),  # Convert to tensor
+            self.normalise_percentile(),  # Normalize using percentile
+            self.crop_to_size(self.patch_size),  # Crop to patch size
         ])
 
         return {'train': train_transform, 'valid': valid_transform}
-
-    def ultrasound_transform(self):
-        train_transform = T.Compose([
-            T.ToTensor(),
-            T.Lambda(lambda x: x.unsqueeze(0)),  # Add channel
-            self.crop_to_size(self.patch_size[:2]),
-            T.RandomHorizontalFlip(p=self.random_flip_prob),
-            T.RandomAffine(
-                degrees=self.rotate_val,
-                translate=self.shift_val,
-                scale=self.scale_val,
-                interpolation=T.InterpolationMode.BILINEAR
-            ),
-            T.Normalize(mean=[0.5], std=[0.5]),  # Example normalization
-        ])
-
-        valid_transform = T.Compose([
-            T.ToTensor(),
-            T.Lambda(lambda x: x.unsqueeze(0)),  # Add channel
-            self.crop_to_size(self.patch_size[:2]),
-            T.Normalize(mean=[0.5], std=[0.5]),
-        ])
-
-        return {'train': train_transform, 'valid': valid_transform}
-
-    def hms_sax_transform(self):
-
-        # Training transformation
-        # 2D Stack input - 3D High Resolution output segmentation
-
-        train_transform = []
-        valid_transform = []
-
-        # First pad to a fixed size
-        # Torch tensor
-        # Channels first
-        # Joint affine transformation
-        # In-plane respiratory motion artefacts (translation and rotation)
-        # Random Crop
-        # Normalise the intensity range
-        train_transform = T.Compose([])
-
-        return {'train': train_transform, 'valid': valid_transform}
-
-
-    def test_3d_sax_transform(self):
-        test_transform = T.Compose([
-            T.ToTensor(),
-            T.Lambda(lambda x: x.unsqueeze(0)),  # Add channel
-            self.normalise_percentile(),
-        ])
-
-        return {'test': test_transform}
