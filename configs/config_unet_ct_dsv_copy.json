@@ -1,0 +1,41 @@
+{
+  "training": {
+    "arch_type": "unet",
+    "n_epochs": 300,
+    "save_epoch_freq": 5,
+    "lr_policy": "poly",
+    "lr_decay_iters": 100,
+    "batchSize": 8,
+    "preloadData": false
+  },
+  "visualisation": {
+    "display_port": 8098,
+    "no_html": true,
+    "display_winsize": 512,
+    "display_id": 1,
+    "display_single_pane_ncols": 2
+  },
+  "data_path": "data",
+  "augmentation": {
+    "resize": [512, 1024],
+    "normalize": true
+  },
+  "model": {
+    "type": "seg",
+    "continue_train": false,
+    "which_epoch": "latest",
+    "model_type": "unet",
+    "tensor_dim": "2D",
+    "division_factor": 16,
+    "input_nc": 3,
+    "output_nc": 19,
+    "lr_rate": 1e-4,
+    "l2_reg_weight": 1e-5,
+    "feature_scale": 4,
+    "gpu_ids": [0, 1],
+    "isTrain": true,
+    "checkpoints_dir": "./checkpoints",
+    "experiment_name": "experiment_cityscapes_unet",
+    "criterion": "dice_loss"
+  }
+}
