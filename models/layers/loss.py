@@ -41,13 +41,16 @@ class SoftDiceLoss(nn.Module):
         smooth = 0.01
         batch_size = input.size(0)
 
-        # Apply softmax to input
+        if target.shape[1] > 1:  # If there are multiple channels in target (RGB channels for Cityscapes)
+            target = torch.argmax(target, dim=1, keepdim=True)  # convert to single channel
+
+        # softmax to input
         input = F.softmax(input, dim=1).view(batch_size, self.n_classes, -1)
         print(f"Input shape after softmax and view: {input.shape}")
 
-        # Apply one-hot encoding to target and reshape
-        target = target.view(batch_size, self.n_classes, -1)
-        print(f"Target shape after encoding and view: {target.shape}")
+        # one-hot encoding to target and reshape
+        target = self.one_hot_encoder(target).view(batch_size, self.n_classes, -1)
+        print(f"Target shape after one-hot encoding and view: {target.shape}")
 
         # Compute Dice loss
         inter = torch.sum(input * target, 2) + smooth
@@ -83,7 +86,7 @@ class SoftDiceLoss(nn.Module):
 
 #         return score
 
-
+# CUSTOM ONE-HOT ENCODER CLASS BY TINA TO TRY AND DEBUG TENSOR MISMATCH
 class One_Hot(nn.Module):
     def __init__(self, depth):
         super(One_Hot, self).__init__()
@@ -91,16 +94,33 @@ class One_Hot(nn.Module):
         self.ones = torch.sparse.torch.eye(depth).cpu()
 
     def forward(self, X_in):
+        if X_in.max() >= self.depth or X_in.min() < 0:
+            raise ValueError("Input values must be within the range [0, depth-1].")
         n_dim = X_in.dim()
-        output_size = X_in.size() + torch.Size([self.depth])
+        output_size = X_in.size() + (self.depth,)
         num_element = X_in.numel()
-        X_in = X_in.data.long().view(num_element)
-        out = Variable(self.ones.index_select(0, X_in)).view(output_size)
-        return out.permute(0, -1, *range(1, n_dim)).squeeze(dim=2).float()
+        X_in = X_in.reshape(-1).long()
+        out = self.ones.index_select(0, X_in).view(output_size)
+        out = out.permute(0, -1, *range(1, n_dim))
 
-    def __repr__(self):
-        return self.__class__.__name__ + "({})".format(self.depth)
+        return out.float()
 
+# class One_Hot(nn.Module):
+#     def __init__(self, depth):
+#         super(One_Hot, self).__init__()
+#         self.depth = depth
+#         self.ones = torch.sparse.torch.eye(depth).cpu()
+
+#     def forward(self, X_in):
+#         n_dim = X_in.dim()
+#         output_size = X_in.size() + torch.Size([self.depth])
+#         num_element = X_in.numel()
+#         X_in = X_in.data.long().view(num_element)
+#         out = Variable(self.ones.index_select(0, X_in)).view(output_size)
+#         return out.permute(0, -1, *range(1, n_dim)).squeeze(dim=2).float()
+
+#     def __repr__(self):
+#         return self.__class__.__name__ + "({})".format(self.depth)
 
 if __name__ == '__main__':
     from torch.autograd import Variable
