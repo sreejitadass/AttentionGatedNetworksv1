@@ -37,7 +37,7 @@
     "tensor_dim": "2D",
     "division_factor": 16,
     "input_nc": 3,
-    "output_nc": 19,
+    "output_nc": 30,
     "lr_rate": 1e-4,
     "l2_reg_weight": 1e-5,
     "feature_scale": 4,

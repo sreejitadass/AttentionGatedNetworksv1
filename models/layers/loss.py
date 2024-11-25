@@ -32,13 +32,24 @@ class SoftDiceLoss(nn.Module):
         self.one_hot_encoder = One_Hot(n_classes).forward
         self.n_classes = n_classes
 
-    def forward(self, input, target):
+    def forward(self, input, target):   
+        # HERE IS THE ISSUE!!!
+
+        print(f"Input shape: {input.shape}")
+        print(f"Target shape (before encoding): {target.shape}")
+
         smooth = 0.01
         batch_size = input.size(0)
 
+        # Apply softmax to input
         input = F.softmax(input, dim=1).view(batch_size, self.n_classes, -1)
-        target = self.one_hot_encoder(target).contiguous().view(batch_size, self.n_classes, -1)
+        print(f"Input shape after softmax and view: {input.shape}")
 
+        # Apply one-hot encoding to target and reshape
+        target = target.view(batch_size, self.n_classes, -1)
+        print(f"Target shape after encoding and view: {target.shape}")
+
+        # Compute Dice loss
         inter = torch.sum(input * target, 2) + smooth
         union = torch.sum(input, 2) + torch.sum(target, 2) + smooth
 
@@ -48,28 +59,29 @@ class SoftDiceLoss(nn.Module):
         return score
 
 
-class CustomSoftDiceLoss(nn.Module):
-    def __init__(self, n_classes, class_ids):
-        super(CustomSoftDiceLoss, self).__init__()
-        self.one_hot_encoder = One_Hot(n_classes).forward
-        self.n_classes = n_classes
-        self.class_ids = class_ids
+# class CustomSoftDiceLoss(nn.Module):
+#     def __init__(self, n_classes, class_ids):
+#         super(CustomSoftDiceLoss, self).__init__()
+#         self.one_hot_encoder = One_Hot(n_classes).forward
+#         self.n_classes = n_classes
+#         self.class_ids = class_ids
 
-    def forward(self, input, target):
-        smooth = 0.01
-        batch_size = input.size(0)
+#     def forward(self, input, target):
 
-        input = F.softmax(input[:,self.class_ids], dim=1).view(batch_size, len(self.class_ids), -1)
-        target = self.one_hot_encoder(target).contiguous().view(batch_size, self.n_classes, -1)
-        target = target[:, self.class_ids, :]
+#         smooth = 0.01
+#         batch_size = input.size(0)
 
-        inter = torch.sum(input * target, 2) + smooth
-        union = torch.sum(input, 2) + torch.sum(target, 2) + smooth
+#         input = F.softmax(input[:,self.class_ids], dim=1).view(batch_size, len(self.class_ids), -1)
+#         target = self.one_hot_encoder(target).contiguous().view(batch_size, self.n_classes, -1)
+#         target = target[:, self.class_ids, :]
 
-        score = torch.sum(2.0 * inter / union)
-        score = 1.0 - score / (float(batch_size) * float(self.n_classes))
+#         inter = torch.sum(input * target, 2) + smooth
+#         union = torch.sum(input, 2) + torch.sum(target, 2) + smooth
 
-        return score
+#         score = torch.sum(2.0 * inter / union)
+#         score = 1.0 - score / (float(batch_size) * float(self.n_classes))
+
+#         return score
 
 
 class One_Hot(nn.Module):

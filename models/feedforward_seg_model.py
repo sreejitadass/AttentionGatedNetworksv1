@@ -52,11 +52,10 @@ class FeedForwardSegmentation(BaseModel):
             self.optimizer_S = get_optimizer(opts, self.net.parameters())
             self.optimizers.append(self.optimizer_S)
 
-            # print the network details
-            # print the network details
-            if kwargs.get('verbose', True):
-                print('Network is initialized')
-                print_network(self.net)
+            # # print the network details
+            # if kwargs.get('verbose', True):
+            #     print('Network is initialized')
+            #     print_network(self.net)
 
     def set_scheduler(self, train_opt):
         for optimizer in self.optimizers:
@@ -77,13 +76,15 @@ class FeedForwardSegmentation(BaseModel):
             elif idx == 1:
                 self.target = Variable(_input.cpu()) if self.use_cuda else Variable(_input)
                 self.target = self.target.expand(self.input.size(0), self.input.size(1), -1, -1)
-                print(f"#### DEBUG #### \n Input shape: {self.input.size()} \n Target shape: {self.target.size()} \n ############")
+                # print(f"#### DEBUG #### \n Input shape: {self.input.size()} \n Target shape: {self.target.size()} \n ############")
                 # assert self.input.size()[1:] == self.target.size()[1:]  # update -> compares only spatial dimensions since CityScapes has RGB channels
                 assert self.input.size() == self.target.size()
 
     def forward(self, split):
         if split == 'train':
+            print(f"Input to net shape: {self.input.size()}")
             self.prediction = self.net(Variable(self.input))
+            print(f"Output shape: {self.prediction.size()}")
         elif split == 'test':
             self.prediction = self.net(Variable(self.input, volatile=True))
             # Apply a softmax and return a segmentation map

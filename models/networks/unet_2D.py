@@ -8,6 +8,7 @@ class unet_2D(nn.Module):
 
     def __init__(self, feature_scale=4, n_classes=21, is_deconv=True, in_channels=3, is_batchnorm=True):
         super(unet_2D, self).__init__()
+
         self.is_deconv = is_deconv
         self.in_channels = in_channels
         self.is_batchnorm = is_batchnorm
@@ -27,16 +28,18 @@ class unet_2D(nn.Module):
         self.conv3 = unetConv2(filters[1], filters[2], self.is_batchnorm)
         self.maxpool3 = nn.MaxPool2d(kernel_size=2)
 
+
         self.conv4 = unetConv2(filters[2], filters[3], self.is_batchnorm)
         self.maxpool4 = nn.MaxPool2d(kernel_size=2)
 
         self.center = unetConv2(filters[3], filters[4], self.is_batchnorm)
 
         # upsampling
-        self.up_concat4 = unetUp(filters[4], filters[3], self.is_deconv)
-        self.up_concat3 = unetUp(filters[3], filters[2], self.is_deconv)
-        self.up_concat2 = unetUp(filters[2], filters[1], self.is_deconv)
-        self.up_concat1 = unetUp(filters[1], filters[0], self.is_deconv)
+        self.up_concat4 = unetUp(filters[4] + filters[3], filters[3], self.is_deconv)
+        self.up_concat3 = unetUp(filters[3] + filters[2], filters[2], self.is_deconv)
+        self.up_concat2 = unetUp(filters[2] + filters[1], filters[1], self.is_deconv)
+        self.up_concat1 = unetUp(filters[1] + filters[0], filters[0], self.is_deconv)
+
 
         # final conv (without any concat)
         self.final = nn.Conv2d(filters[0], n_classes, 1)

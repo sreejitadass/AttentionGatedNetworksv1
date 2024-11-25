@@ -15,22 +15,32 @@ from models import get_model
 from torchvision.datasets import Cityscapes
 from torchvision.transforms import Compose, ToTensor, Normalize, Resize
 
-def get_cityscapes_dataset(data_path, split, transform):
+def get_cityscapes_transforms():
+    # For the input image
+    input_transform = Compose([
+        Resize((512, 1024)),  # Resize images to a smaller resolution
+        ToTensor(),          # Convert to PyTorch tensor
+        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize for pretrained models
+    ])
+
+    # For the target (segmentation mask)
+    target_transform = Compose([
+        Resize((512, 1024)),  # Resize target to match input size
+        ToTensor()            # Convert to tensor (grayscale)
+    ])
+
+    return input_transform, target_transform
+
+
+def get_cityscapes_dataset(data_path, split, input_transform, target_transform):
     return Cityscapes(
         root=data_path,
         split=split,
         mode='fine',
         target_type='semantic',
-        transform=transform,
-        target_transform=transform
+        transform=input_transform,        # Apply to input image
+        target_transform=target_transform # Apply to target segmentation mask
     )
-
-def get_cityscapes_transforms():
-    return Compose([
-        Resize((512, 1024)),  # Resize images to a smaller resolution
-        ToTensor(),          # Convert to PyTorch tensor
-        Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize for pretrained models
-    ])
 
 
 def train(arguments):
@@ -42,56 +52,40 @@ def train(arguments):
     json_opts = json_file_to_pyobj(json_filename)
     train_opts = json_opts.training
 
-    # Architecture type
-    arch_type = train_opts.arch_type
-
-    # Setup Dataset and Augmentation
-    ds_class = get_dataset(arch_type)
-    ds_path  = get_dataset_path(arch_type, json_opts.data_path)
-    ds_transform = get_dataset_transformation(arch_type, opts=json_opts.augmentation)
-
     # Setup the NN Model
     model = get_model(json_opts.model)
-    if network_debug:
-        print('# of pars: ', model.get_number_parameters())
-        print('fp time: {0:.3f} sec\tbp time: {1:.3f} sec per sample'.format(*model.get_fp_bp_time2()))
-        exit()
 
-    # Setup Data Loader
-    # train_dataset = ds_class(ds_path, split='train',      transform=ds_transform['train'], preload_data=train_opts.preloadData)
-    # valid_dataset = ds_class(ds_path, split='val',        transform=ds_transform['valid'], preload_data=train_opts.preloadData)
-    # test_dataset  = ds_class(ds_path, split='test',       transform=ds_transform['valid'], preload_data=train_opts.preloadData)
-    
-    # train_loader = DataLoader(dataset=train_dataset, num_workers=0, batch_size=train_opts.batchSize, shuffle=True)
-    # valid_loader = DataLoader(dataset=valid_dataset, num_workers=0, batch_size=train_opts.batchSize, shuffle=False)
-    # test_loader  = DataLoader(dataset=test_dataset,  num_workers=0, batch_size=train_opts.batchSize, shuffle=False)
+    # Get input and target transforms
+    input_transform, target_transform = get_cityscapes_transforms()
 
-    train_transform = get_cityscapes_transforms()
-    valid_transform = get_cityscapes_transforms()
+    # Create datasets
+    train_dataset = get_cityscapes_dataset(data_path='data', split='train', 
+                                           input_transform=input_transform, 
+                                           target_transform=target_transform)
+    valid_dataset = get_cityscapes_dataset(data_path='data', split='val', 
+                                           input_transform=input_transform, 
+                                           target_transform=target_transform)
+    test_dataset = get_cityscapes_dataset(data_path='data', split='test', 
+                                          input_transform=input_transform, 
+                                          target_transform=target_transform)
 
-    train_dataset = get_cityscapes_dataset(data_path='data', split='train', transform=train_transform)
-    valid_dataset = get_cityscapes_dataset(data_path='data', split='val', transform=valid_transform)
-    test_dataset = get_cityscapes_dataset(data_path='data', split='test', transform=valid_transform)
-
+    # DataLoaders
     train_loader = DataLoader(dataset=train_dataset, num_workers=4, batch_size=train_opts.batchSize, shuffle=True)
     valid_loader = DataLoader(dataset=valid_dataset, num_workers=4, batch_size=train_opts.batchSize, shuffle=False)
     test_loader = DataLoader(dataset=test_dataset, num_workers=4, batch_size=train_opts.batchSize, shuffle=False)
 
+    # Print the first input-target pair
+    # input_img, target_mask = train_dataset[0]
 
-    # # Get the first image from the dataset
-    first_img = train_loader.dataset[0]
-
-    # image_np = first_img.permute(1, 2, 0).numpy()
-
-    # # Display the image using matplotlib
-    # plt.imshow(image_np)
-    # plt.axis('off')  # Turn off axis
+    # Display the input image
+    # plt.imshow(input_img.permute(1, 2, 0).numpy()), plt.title("First Input Image"), plt.axis('off'), plt.show()
     # plt.show()
 
-    # return
+    # print("Input image shape:", input_img.shape)
+    # print("Target mask shape:", target_mask.shape)
 
     # Visualisation Parameters
-    visualizer = Visualiser(json_opts.visualisation, save_dir=model.save_dir)
+    # visualizer = Visualiser(json_opts.visualisation, save_dir=model.save_dir)
     error_logger = ErrorLogger()
 
     # Training Function
@@ -125,12 +119,12 @@ def train(arguments):
 
                 # Visualise predictions
                 visuals = model.get_current_visuals()
-                visualizer.display_current_results(visuals, epoch=epoch, save_result=False)
+                # visualizer.display_current_results(visuals, epoch=epoch, save_result=False)
 
         # Update the plots
-        for split in ['train', 'validation', 'test']:
-            visualizer.plot_current_errors(epoch, error_logger.get_errors(split), split_name=split)
-            visualizer.print_current_errors(epoch, error_logger.get_errors(split), split_name=split)
+        # for split in ['train', 'validation', 'test']:
+        #     visualizer.plot_current_errors(epoch, error_logger.get_errors(split), split_name=split)
+        #     visualizer.print_current_errors(epoch, error_logger.get_errors(split), split_name=split)
         error_logger.reset()
 
         # Save the model parameters
