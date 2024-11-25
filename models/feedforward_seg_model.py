@@ -76,6 +76,9 @@ class FeedForwardSegmentation(BaseModel):
                 self.input = _input.cpu() if self.use_cuda else _input
             elif idx == 1:
                 self.target = Variable(_input.cpu()) if self.use_cuda else Variable(_input)
+                self.target = self.target.expand(self.input.size(0), self.input.size(1), -1, -1)
+                print(f"#### DEBUG #### \n Input shape: {self.input.size()} \n Target shape: {self.target.size()} \n ############")
+                # assert self.input.size()[1:] == self.target.size()[1:]  # update -> compares only spatial dimensions since CityScapes has RGB channels
                 assert self.input.size() == self.target.size()
 
     def forward(self, split):
