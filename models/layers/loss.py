@@ -35,8 +35,8 @@ class SoftDiceLoss(nn.Module):
     def forward(self, input, target):   
         # HERE IS THE ISSUE!!!
 
-        print(f"Input shape: {input.shape}")
-        print(f"Target shape (before encoding): {target.shape}")
+        # print(f"Input shape: {input.shape}")
+        # print(f"Target shape (before encoding): {target.shape}")
 
         smooth = 0.01
         batch_size = input.size(0)
@@ -46,11 +46,11 @@ class SoftDiceLoss(nn.Module):
 
         # softmax to input
         input = F.softmax(input, dim=1).view(batch_size, self.n_classes, -1)
-        print(f"Input shape after softmax and view: {input.shape}")
+        # print(f"Input shape after softmax and view: {input.shape}")
 
         # one-hot encoding to target and reshape
         target = self.one_hot_encoder(target).view(batch_size, self.n_classes, -1)
-        print(f"Target shape after one-hot encoding and view: {target.shape}")
+        # print(f"Target shape after one-hot encoding and view: {target.shape}")
 
         # Compute Dice loss
         inter = torch.sum(input * target, 2) + smooth
@@ -91,7 +91,7 @@ class One_Hot(nn.Module):
     def __init__(self, depth):
         super(One_Hot, self).__init__()
         self.depth = depth
-        self.ones = torch.sparse.torch.eye(depth).cpu()
+        self.ones = torch.sparse.torch.eye(depth).cuda()
 
     def forward(self, X_in):
         if X_in.max() >= self.depth or X_in.min() < 0:
@@ -109,7 +109,7 @@ class One_Hot(nn.Module):
 #     def __init__(self, depth):
 #         super(One_Hot, self).__init__()
 #         self.depth = depth
-#         self.ones = torch.sparse.torch.eye(depth).cpu()
+#         self.ones = torch.sparse.torch.eye(depth).cuda()
 
 #     def forward(self, X_in):
 #         n_dim = X_in.dim()
@@ -127,8 +127,8 @@ if __name__ == '__main__':
     depth=3
     batch_size=2
     encoder = One_Hot(depth=depth).forward
-    y = Variable(torch.LongTensor(batch_size, 1, 1, 2 ,2).random_() % depth).cpu()  # 4 classes,1x3x3 img
+    y = Variable(torch.LongTensor(batch_size, 1, 1, 2 ,2).random_() % depth).cuda()  # 4 classes,1x3x3 img
     y_onehot = encoder(y)
-    x = Variable(torch.randn(y_onehot.size()).float()).cpu()
+    x = Variable(torch.randn(y_onehot.size()).float()).cuda()
     dicemetric = SoftDiceLoss(n_classes=depth)
     dicemetric(x,y)
