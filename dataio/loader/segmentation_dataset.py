@@ -40,8 +40,8 @@ class SegmentationDataset(data.Dataset):
         self.preload_data = preload_data
         if self.preload_data:
             print('Preloading the {0} dataset ...'.format(split))
-            self.raw_images = [load_mhd_image(ii, dtype=np.int16)[0] for ii in self.image_filenames]
-            self.raw_labels = [load_mhd_image(ii, dtype=np.uint8)[0] for ii in self.target_filenames]
+            self.raw_images = [load_mhd_image(ii)[0] for ii in self.image_filenames]
+            self.raw_labels = [load_mhd_image(ii)[0] for ii in self.target_filenames]
             print('Loading is done\n')
 
     def __getitem__(self, index):
@@ -60,6 +60,8 @@ class SegmentationDataset(data.Dataset):
         # handle exceptions
         check_exceptions(input, target)
         if self.transform:
+            print(f'Input shape: {input.shape}')
+            print(f'Target Dimension: {target.shape}')
             input, target = self.transform(input, target)
 
         return input, target
