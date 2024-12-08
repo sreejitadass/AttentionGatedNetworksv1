@@ -29,6 +29,7 @@ class Transformations:
             'test_sax': self.test_3d_sax_transform,
             'acdc_sax': self.cmr_3d_sax_transform,
             'us':       self.ultrasound_transform,
+            'segmentation': self.segmentation_transform
         }[self.name]()
 
     def print(self):
@@ -139,6 +140,30 @@ class Transformations:
 
 
     def ultrasound_transform(self):
+
+        train_transform = ts.Compose([ts.ToTensor(),
+                                      ts.TypeCast(['float']),
+                                      ts.AddChannel(axis=0),
+                                      ts.SpecialCrop(self.patch_size,0),
+                                      ts.RandomFlip(h=True, v=False, p=self.random_flip_prob),
+                                      ts.RandomAffine(rotation_range=self.rotate_val,
+                                                      translation_range=self.shift_val,
+                                                      zoom_range=self.scale_val,
+                                                      interp=('bilinear')),
+                                      ts.StdNormalize(),
+                                ])
+
+        valid_transform = ts.Compose([ts.ToTensor(),
+                                      ts.TypeCast(['float']),
+                                      ts.AddChannel(axis=0),
+                                      ts.SpecialCrop(self.patch_size,0),
+                                      ts.StdNormalize(),
+                                ])
+
+        return {'train': train_transform, 'valid': valid_transform}
+
+    def segmentation_transform(self):
+        #TODO: is this correct
 
         train_transform = ts.Compose([ts.ToTensor(),
                                       ts.TypeCast(['float']),
