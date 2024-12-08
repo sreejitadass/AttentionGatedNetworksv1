@@ -2,6 +2,7 @@ import nibabel as nib
 import numpy as np
 import os
 from utils.util import mkdir
+import SimpleITK as sitk
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in [".nii.gz"])
@@ -24,6 +25,16 @@ def load_nifti_img(filepath, dtype):
             }
 
     return out_nii_array, meta
+def is_mhd_file(x):
+    return x.endswith('.mhd')
+
+def load_mhd_image(filepath):
+    itk_image = sitk.ReadImage(filepath)
+    np_image = sitk.GetArrayFromImage(itk_image)
+    spacing = itk_image.GetSpacing()
+    origin = itk_image.GetOrigin()
+    
+    return np_image, spacing, origin
 
 
 def write_nifti_img(input_nii_array, meta, savedir):
