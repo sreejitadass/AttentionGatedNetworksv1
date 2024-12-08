@@ -1,6 +1,6 @@
 {
   "training":{
-    "arch_type": "acdc_sax",
+    "arch_type": "segmentation",
     "n_epochs": 1000,
     "save_epoch_freq": 10,
     "lr_policy": "step",
@@ -16,10 +16,10 @@
     "display_single_pane_ncols": 0
   },
   "data_path": {
-    "acdc_sax": "Segmentation_data"
+    "segmentation": "Segmentation_data"
   },
   "augmentation": {
-    "acdc_sax": {
+    "segmentation": {
       "shift": [0.1,0.1],
       "rotate": 15.0,
       "scale": [0.7,1.3],
