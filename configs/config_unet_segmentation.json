@@ -16,7 +16,7 @@
     "display_single_pane_ncols": 0
   },
   "data_path": {
-    "segmentation": "Segmentation_data"
+    "segmentation": "data/Segmentation_data"
   },
   "augmentation": {
     "segmentation": {
