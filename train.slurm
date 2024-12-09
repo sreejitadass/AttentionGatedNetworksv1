@@ -1,4 +1,4 @@
-#!/bash/sh
+#!/bin/bash
 #SBATCH --account=cs6501_sp24
 #SBATCH --partition=bii-gpu
 #SBATCH --account=bii_dsc_community
@@ -13,5 +13,5 @@
 #SBATCH -e segmentation-%u-%j.err
 
 CONFIG_FILE=configs/config_unet_segmentation.json
-source $ENV/bin/activate
+source ENV/bin/activate
 python train_segmentation.py -c $CONFIG_FILE
