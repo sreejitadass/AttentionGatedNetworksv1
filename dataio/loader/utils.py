@@ -37,10 +37,10 @@ def load_mhd_image(filepath):
     return np_image, spacing, origin
 
 def one_hot_encode(target, n_classes):
-    one_hot_encoded = np.zeros((target.shape[0], target.shape[1], n_classes), dtype=np.uint8)
+    one_hot_encoded = np.zeros((n_classes, target.shape[0], target.shape[1]), dtype=np.uint8)
     for i in range(target.shape[0]):
         for j in range(target.shape[1]):
-            one_hot_encoded[i, j, target[i, j]] = 1
+            one_hot_encoded[target[i, j], i, j] = 1
     return one_hot_encoded
 
 

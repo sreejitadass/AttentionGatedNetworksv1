@@ -11,7 +11,7 @@ from .utils import check_exceptions, load_mhd_image, is_mhd_file, one_hot_encode
 class SegmentationDataset(data.Dataset):
     def __init__(self, root_dir, split, transform=None, preload_data=False):
         super(SegmentationDataset, self).__init__()
-        self.n_classes = 4
+        self.n_classes = 5
 
         if split == 'test':
             split_dir = 'Testing'
