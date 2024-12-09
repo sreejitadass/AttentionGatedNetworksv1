@@ -45,7 +45,7 @@ def train(arguments):
     test_loader  = DataLoader(dataset=test_dataset,  num_workers=16, batch_size=train_opts.batchSize, shuffle=False)
 
     # Visualisation Parameters
-    visualizer = Visualiser(json_opts.visualisation, save_dir=model.save_dir)
+    #visualizer = Visualiser(json_opts.visualisation, save_dir=model.save_dir)
     error_logger = ErrorLogger()
 
     # Training Function
@@ -78,13 +78,14 @@ def train(arguments):
                 error_logger.update({**errors, **stats}, split=split)
 
                 # Visualise predictions
-                visuals = model.get_current_visuals()
-                visualizer.display_current_results(visuals, epoch=epoch, save_result=False)
+                #visuals = model.get_current_visuals()
+                #visualizer.display_current_results(visuals, epoch=epoch, save_result=False)
 
         # Update the plots
         for split in ['train', 'validation', 'test']:
-            visualizer.plot_current_errors(epoch, error_logger.get_errors(split), split_name=split)
-            visualizer.print_current_errors(epoch, error_logger.get_errors(split), split_name=split)
+            print(f'Split: {split} | Errors: {error_logger.get_errors(split)}')
+            #visualizer.plot_current_errors(epoch, error_logger.get_errors(split), split_name=split)
+            #visualizer.print_current_errors(epoch, error_logger.get_errors(split), split_name=split)
         error_logger.reset()
 
         # Save the model parameters

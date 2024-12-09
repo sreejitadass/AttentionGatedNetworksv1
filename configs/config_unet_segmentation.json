@@ -1,8 +1,8 @@
 {
   "training":{
     "arch_type": "segmentation",
-    "n_epochs": 1000,
-    "save_epoch_freq": 10,
+    "n_epochs": 10,
+    "save_epoch_freq": 1,
     "lr_policy": "step",
     "lr_decay_iters": 250,
     "batchSize": 16,
