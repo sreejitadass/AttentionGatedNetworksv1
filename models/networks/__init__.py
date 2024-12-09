@@ -8,6 +8,7 @@ from .unet_CT_single_att_dsv_3D import *
 from .unet_CT_multi_att_dsv_3D import *
 from .sononet import *
 from .sononet_grid_attention import *
+from .attention_unet_2d import *
 
 def get_network(name, n_classes, in_channels=3, feature_scale=4, tensor_dim='2D',
                 nonlocal_mode='embedded_gaussian', attention_dsample=(2,2,2),
@@ -62,7 +63,8 @@ def _get_model_instance(name, tensor_dim):
         'unet_grid_gating': {'3D': unet_grid_attention_3D},
         'unet_ct_dsv': {'3D': unet_CT_dsv_3D},
         'unet_ct_single_att_dsv': {'3D': unet_CT_single_att_dsv_3D},
-        'unet_ct_multi_att_dsv': {'3D': unet_CT_multi_att_dsv_3D},
+        'unet_ct_multi_att_dsv': {'3D': unet_CT_multi_att_dsv_3D,
+                                    '2D': attention_unet_2d},
         'sononet': {'2D': sononet},
         'sononet2': {'2D': sononet2},
         'sononet_grid_attention': {'2D': sononet_grid_attention}

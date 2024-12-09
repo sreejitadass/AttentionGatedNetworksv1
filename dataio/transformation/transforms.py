@@ -166,7 +166,7 @@ class Transformations:
         #TODO: is this correct
 
         train_transform = ts.Compose([ts.ToTensor(),
-                                      ts.TypeCast(['float']),
+                                      ts.TypeCast('float'),
                                       ts.AddChannel(axis=0),
                                       ts.SpecialCrop(self.patch_size,0),
                                       ts.RandomFlip(h=True, v=False, p=self.random_flip_prob),
@@ -178,7 +178,7 @@ class Transformations:
                                 ])
 
         valid_transform = ts.Compose([ts.ToTensor(),
-                                      ts.TypeCast(['float']),
+                                      ts.TypeCast('float'),
                                       ts.AddChannel(axis=0),
                                       ts.SpecialCrop(self.patch_size,0),
                                       ts.StdNormalize(),

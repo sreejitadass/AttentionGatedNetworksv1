@@ -1,5 +1,6 @@
 # TODO: 
 import torch.utils.data as data
+import torch
 import numpy as np
 import datetime
 
@@ -60,9 +61,11 @@ class SegmentationDataset(data.Dataset):
         # handle exceptions
         check_exceptions(input, target)
         if self.transform:
+            input, target = self.transform(input, target)
+            input = torch.stack([input] * 8, dim=1) #hacky solution
+            target = torch.stack([target] * 8, dim=1) #hacky solution
             print(f'Input shape: {input.shape}')
             print(f'Target Dimension: {target.shape}')
-            input, target = self.transform(input, target)
 
         return input, target
 
@@ -70,7 +73,7 @@ class SegmentationDataset(data.Dataset):
         return len(self.image_filenames)
 
 if __name__ == '__main__':
-    dataset = SegmentationDataset("Segmentation_data",'test')
+    dataset = SegmentationDataset("Segmentation_data",'train')
 
     from torch.utils.data import DataLoader, sampler
     ds = DataLoader(dataset=dataset, num_workers=1, batch_size=2)
