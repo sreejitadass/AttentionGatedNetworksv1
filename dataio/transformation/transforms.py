@@ -165,23 +165,31 @@ class Transformations:
     def segmentation_transform(self):
         #TODO: is this correct
 
-        train_transform = ts.Compose([ts.ToTensor(),
-                                      ts.TypeCast('float'),
+        train_transform = ts.Compose([#ts.PadNumpy(size=self.scale_size),
+                                      ts.ToTensor(),
+                                      #ts.ChannelsFirst(),
+                                      ts.TypeCast(['float', 'float']),
+                                      ts.RandomFlip(h=True, v=True, p=self.random_flip_prob),
+                                      ts.RandomAffine(rotation_range=self.rotate_val, translation_range=self.shift_val,
+                                                      zoom_range=self.scale_val, interp=('bilinear', 'nearest')),
+                                      #ts.NormalizeMedicPercentile(norm_flag=(True, False)),
+                                      ts.NormalizeMedic(norm_flag=(True, False)),
+                                      ts.ChannelsLast(),
                                       ts.AddChannel(axis=0),
-                                      ts.SpecialCrop(self.patch_size,0),
-                                      ts.RandomFlip(h=True, v=False, p=self.random_flip_prob),
-                                      ts.RandomAffine(rotation_range=self.rotate_val,
-                                                      translation_range=self.shift_val,
-                                                      zoom_range=self.scale_val,
-                                                      interp=('bilinear')),
-                                    #   ts.StdNormalize(),
+                                      ts.RandomCrop(size=self.patch_size),
+                                      ts.TypeCast(['float', 'long'])
                                 ])
 
-        valid_transform = ts.Compose([ts.ToTensor(),
-                                      ts.TypeCast('float'),
+        valid_transform = ts.Compose([#ts.PadNumpy(size=self.scale_size),
+                                      ts.ToTensor(),
+                                      #ts.ChannelsFirst(),
+                                      ts.TypeCast(['float', 'float']),
+                                      #ts.NormalizeMedicPercentile(norm_flag=(True, False)),
+                                      ts.NormalizeMedic(norm_flag=(True, False)),
+                                      ts.ChannelsLast(),
                                       ts.AddChannel(axis=0),
-                                      ts.SpecialCrop(self.patch_size,0),
-                                    #   ts.StdNormalize(),
+                                      ts.SpecialCrop(size=self.patch_size, crop_type=0),
+                                      ts.TypeCast(['float', 'long'])
                                 ])
 
         return {'train': train_transform, 'valid': valid_transform}
