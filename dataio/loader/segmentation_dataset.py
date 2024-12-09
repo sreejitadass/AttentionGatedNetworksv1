@@ -62,14 +62,10 @@ class SegmentationDataset(data.Dataset):
         # handle exceptions
         check_exceptions(input, target)
         if self.transform:
-            target = one_hot_encode(target, self.n_classes)
-            input = torch.stack([input] * 32, dim=1) #hacky solution
-            target = torch.stack([target] * 32, dim=1) #hacky solution
+            input = np.stack([input] * 32, axis=1) #hacky solution
+            target = np.stack([target] * 32, axis=1) #hacky solution
             input, target = self.transform(input, target)
-            input = ts.StdNormalize()(input)
-            print(f'Input shape: {input.shape}')
-            print(f'Target Dimension: {target.shape}')
-
+            
         return input, target
 
     def __len__(self):
