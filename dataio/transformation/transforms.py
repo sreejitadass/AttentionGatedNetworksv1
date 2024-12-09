@@ -174,14 +174,14 @@ class Transformations:
                                                       translation_range=self.shift_val,
                                                       zoom_range=self.scale_val,
                                                       interp=('bilinear')),
-                                      ts.StdNormalize(),
+                                    #   ts.StdNormalize(),
                                 ])
 
         valid_transform = ts.Compose([ts.ToTensor(),
                                       ts.TypeCast('float'),
                                       ts.AddChannel(axis=0),
                                       ts.SpecialCrop(self.patch_size,0),
-                                      ts.StdNormalize(),
+                                    #   ts.StdNormalize(),
                                 ])
 
         return {'train': train_transform, 'valid': valid_transform}
