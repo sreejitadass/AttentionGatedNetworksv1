@@ -5,11 +5,11 @@ import torch.nn.functional as F
 from models.networks_other import init_weights
 from models.layers.grid_attention_layer import GridAttentionBlock2D
 
-class attention_unet_2D(nn.Module):
+class attention_unet_2d(nn.Module):
 
     def __init__(self, feature_scale=4, n_classes=21, is_deconv=True, in_channels=3, is_batchnorm=True, 
         nonlocal_mode='concatenation', attention_dsample = (2,2)): #TODO: check attention_dsample
-        super(attention_unet_2D, self).__init__()
+        super(attention_unet_2d, self).__init__()
         self.is_deconv = is_deconv
         self.in_channels = in_channels
         self.is_batchnorm = is_batchnorm
@@ -108,7 +108,7 @@ class attention_unet_2D(nn.Module):
 
 class MultiAttentionBlock2d(nn.Module):
     def __init__(self, in_size, gate_size, inter_size, nonlocal_mode, sub_sample_factor):
-        super(MultiAttentionBlock, self).__init__()
+        super(MultiAttentionBlock2d, self).__init__()
         self.gate_block_1 = GridAttentionBlock2D(in_channels=in_size, gating_channels=gate_size,
                                                  inter_channels=inter_size, mode=nonlocal_mode,
                                                  sub_sample_factor= sub_sample_factor)

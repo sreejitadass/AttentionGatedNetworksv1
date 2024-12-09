@@ -1,15 +1,17 @@
-# TODO: 
 import torch.utils.data as data
+import torch
 import numpy as np
 import datetime
+import torchsample.transforms as ts
 
 from os import listdir
 from os.path import join
-from .utils import check_exceptions, load_mhd_image, is_mhd_file
+from .utils import check_exceptions, load_mhd_image, is_mhd_file, one_hot_encode
 
 class SegmentationDataset(data.Dataset):
     def __init__(self, root_dir, split, transform=None, preload_data=False):
         super(SegmentationDataset, self).__init__()
+        self.n_classes = 4
 
         if split == 'test':
             split_dir = 'Testing'
@@ -60,9 +62,13 @@ class SegmentationDataset(data.Dataset):
         # handle exceptions
         check_exceptions(input, target)
         if self.transform:
+            target = one_hot_encode(target, self.n_classes)
+            input = torch.stack([input] * 32, dim=1) #hacky solution
+            target = torch.stack([target] * 32, dim=1) #hacky solution
+            input, target = self.transform(input, target)
+            input = ts.StdNormalize()(input)
             print(f'Input shape: {input.shape}')
             print(f'Target Dimension: {target.shape}')
-            input, target = self.transform(input, target)
 
         return input, target
 
@@ -70,7 +76,7 @@ class SegmentationDataset(data.Dataset):
         return len(self.image_filenames)
 
 if __name__ == '__main__':
-    dataset = SegmentationDataset("Segmentation_data",'test')
+    dataset = SegmentationDataset("Segmentation_data",'train')
 
     from torch.utils.data import DataLoader, sampler
     ds = DataLoader(dataset=dataset, num_workers=1, batch_size=2)

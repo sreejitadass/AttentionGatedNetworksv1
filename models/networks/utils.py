@@ -299,7 +299,7 @@ class UnetUp3_CT(nn.Module):
 class UnetUp2_CT(nn.Module):
     def __init__(self, in_size, out_size, is_batchnorm=True):
         super(UnetUp2_CT, self).__init__()
-        self.conv = unetConv2(in_size + out_size, out_size, is_batchnorm, kernel_size=3, padding_size=1)
+        self.conv = unetConv2(in_size + out_size, out_size, is_batchnorm, ks=3, padding=1)
         self.up = nn.Upsample(scale_factor=(2,2), mode='bilinear')
 
         # initialise the blocks
