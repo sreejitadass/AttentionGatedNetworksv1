@@ -11,7 +11,7 @@
 #SBATCH -J segmentation
 #SBATCH -o segmentation-%u-%j.out
 #SBATCH -e segmentation-%u-%j.err
-#SBATCH --mem=64G
+#SBATCH --mem=256G
 
 CONFIG_FILE=configs/config_unet_segmentation.json
 source ENV/bin/activate

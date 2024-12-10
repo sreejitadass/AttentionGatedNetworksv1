@@ -11,7 +11,7 @@
 #SBATCH -J tune
 #SBATCH -o tune-%u-%j.out
 #SBATCH -e tune-%u-%j.err
-#SBATCH --mem=64G
+#SBATCH --mem=256G
 
 CONFIG_FILE=configs/config_unet_segmentation.json
 source ENV/bin/activate

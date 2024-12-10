@@ -1,28 +1,27 @@
 import collections
 import json
-import os
-import numpy
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import matplotlib.pyplot as plt
 import optuna
 
 from dataio.loader import get_dataset, get_dataset_path
 from dataio.transformation import get_dataset_transformation
-from utils.util import json_file_to_pyobj
-from utils.visualiser import Visualiser
 from utils.error_logger import ErrorLogger
 from models import get_model
 
 def tune_segmentation():
     study = optuna.create_study()
-    study.optimize(objective, n_trials=30)
-    return study.best_params
+    study.optimize(objective, n_trials=15)
+    return study.best_params, study.best_value
+
+# 759762 is 20 trials
+# 759763 is 15 trials
+# 759826 is 15 trials without batchsize
 
 def objective(trial):
     # Parse input arguments
-    n_epochs = 5
-    batchSize = trial.suggest_categorical('batchSize', [8, 16, 32])
+    n_epochs = 3
+    batchSize = trial.suggest_categorical('batchSize', [16, 32])
     feature_scale = trial.suggest_categorical('feature_scale', [2, 4, 8])
     l2_reg_weight = trial.suggest_loguniform('l2_reg_weight', 1e-7, 1e-5)
     lr_rate = trial.suggest_loguniform('lr_rate', 1e-5, 1e-3)
@@ -40,9 +39,9 @@ def objective(trial):
     json_opts_dict["model"]["feature_scale"] = feature_scale
     json_opts_dict["model"]["l2_reg_weight"] = l2_reg_weight
     json_opts_dict["model"]["lr_rate"] = lr_rate
-    json_opts_dict["augmentation"]["shift"] = shift
-    json_opts_dict["augmentation"]["rotate"] = rotate
-    json_opts_dict["augmentation"]["random_flip_prob"] = random_flip_prob
+    json_opts_dict["augmentation"]["segmentation"]["shift"] = [shift, shift]
+    json_opts_dict["augmentation"]["segmentation"]["rotate"] = rotate
+    json_opts_dict["augmentation"]["segmentation"]["random_flip_prob"] = random_flip_prob
     json_opts_dict["model"]["optim"] = optim
 
     json_opts = json_dict_to_pyobj(json_opts_dict)
@@ -122,5 +121,6 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config',  help='training config file', required=True)
     args = parser.parse_args()
 
-    best_params = tune_segmentation()
+    best_params, best_scores = tune_segmentation()
     print('Best Parameters:', best_params)
+    print('Best Score:', best_scores)
