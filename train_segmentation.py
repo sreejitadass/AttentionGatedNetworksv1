@@ -105,6 +105,7 @@ def train(arguments):
 
 def plot_metrics(metrics):
     for key in metrics['train']:
+        plt.figure()
         for split in metrics:
             plt.plot(metrics[split][key], label=split)
         plt.legend()
