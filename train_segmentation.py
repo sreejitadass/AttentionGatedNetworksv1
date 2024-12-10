@@ -1,6 +1,8 @@
+import os
 import numpy
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 
 from dataio.loader import get_dataset, get_dataset_path
@@ -47,6 +49,7 @@ def train(arguments):
     # Visualisation Parameters
     #visualizer = Visualiser(json_opts.visualisation, save_dir=model.save_dir)
     error_logger = ErrorLogger()
+    stats = {'train': dict(), 'validation': dict(), 'test': dict()}
 
     # Training Function
     model.set_scheduler(train_opts)
@@ -74,8 +77,8 @@ def train(arguments):
 
                 # Error visualisation
                 errors = model.get_current_errors()
-                stats = model.get_segmentation_stats()
-                error_logger.update({**errors, **stats}, split=split)
+                metrics = model.get_segmentation_stats()
+                error_logger.update({**errors, **metrics}, split=split)
 
                 # Visualise predictions
                 #visuals = model.get_current_visuals()
@@ -86,15 +89,30 @@ def train(arguments):
             print(f'Split: {split} | Errors: {error_logger.get_errors(split)}')
             #visualizer.plot_current_errors(epoch, error_logger.get_errors(split), split_name=split)
             #visualizer.print_current_errors(epoch, error_logger.get_errors(split), split_name=split)
+            for key, stat in error_logger.get_errors(split).items():
+                stats[split][key] = stats[split].get(key, []) + [stat]
         error_logger.reset()
 
         # Save the model parameters
         if epoch % train_opts.save_epoch_freq == 0:
             model.save(epoch)
+            plot_metrics(stats)
 
         # Update the model learning rate
         model.update_learning_rate()
 
+    plot_metrics(stats)
+
+def plot_metrics(metrics):
+    for key in metrics['train']:
+        for split in metrics:
+            plt.plot(metrics[split][key], label=split)
+        plt.legend()
+        plt.title(f"{key} vs. epoch")
+        plt.xlabel('epoch')
+        plt.ylabel(key)
+        os.makedirs('figs', exist_ok=True)
+        plt.savefig(f'figs/{key}.png')
 
 if __name__ == '__main__':
     import argparse
