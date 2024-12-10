@@ -13,6 +13,6 @@
 #SBATCH -e tune-%u-%j.err
 #SBATCH --mem=256G
 
-CONFIG_FILE=configs/config_unet_segmentation.json
+CONFIG_FILE=configs/config_attn_unet_segmentation.json
 source ENV/bin/activate
 time python tune_segmentation.py -c $CONFIG_FILE

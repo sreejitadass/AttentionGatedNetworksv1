@@ -72,7 +72,8 @@ class SegmentationDataset(data.Dataset):
         return len(self.image_filenames)
 
 if __name__ == '__main__':
-    dataset = SegmentationDataset("Segmentation_data",'train')
+    dataset = SegmentationDataset("data/Segmentation_data", 'train', preload_data=True)
+    print(np.unique(np.array(dataset.raw_labels), return_counts=True))
 
     from torch.utils.data import DataLoader, sampler
     ds = DataLoader(dataset=dataset, num_workers=1, batch_size=2)

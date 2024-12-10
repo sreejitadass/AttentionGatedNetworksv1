@@ -96,14 +96,14 @@ def train(arguments):
         # Save the model parameters
         if epoch % train_opts.save_epoch_freq == 0:
             model.save(epoch)
-            plot_metrics(stats)
+            plot_metrics(stats, json_opts.model.model_type)
 
         # Update the model learning rate
         model.update_learning_rate()
 
-    plot_metrics(stats)
+    plot_metrics(stats, json_opts.model.model_type)
 
-def plot_metrics(metrics):
+def plot_metrics(metrics, model_type):
     plt.figure()
     for split in metrics:
         plt.plot(metrics[split]['Seg_Loss'], label=split)
@@ -111,8 +111,8 @@ def plot_metrics(metrics):
     plt.title(f"Loss vs. epoch")
     plt.xlabel('epoch')
     plt.ylabel('SoftDiceLoss')
-    os.makedirs('figs', exist_ok=True)
-    plt.savefig(f'figs/Seg_Loss.png')
+    os.makedirs(f'figs/{model_type}', exist_ok=True)
+    plt.savefig(f'figs/{model_type}/Seg_Loss.png')
 
     for key in metrics['validation']:
         if key != 'Seg_Loss':
@@ -123,8 +123,7 @@ def plot_metrics(metrics):
             plt.title(f"{key} vs. epoch")
             plt.xlabel('epoch')
             plt.ylabel(key)
-            os.makedirs('figs', exist_ok=True)
-            plt.savefig(f'figs/{key}.png')
+            plt.savefig(f'figs/{model_type}/{key}.png')
 
 if __name__ == '__main__':
     import argparse
