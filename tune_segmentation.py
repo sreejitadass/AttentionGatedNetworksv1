@@ -99,7 +99,7 @@ def objective(trial):
                 metrics = model.get_segmentation_stats()
                 error_logger.update({**errors, **metrics}, split=split)
 
-        score = error_logger.get_errors('validation')['meanIoU']
+        score = error_logger.get_errors('validation')['Mean_IOU']
 
         error_logger.reset()
 
@@ -122,4 +122,5 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config',  help='training config file', required=True)
     args = parser.parse_args()
 
-    tune_segmentation()
+    best_params = tune_segmentation()
+    print('Best Parameters:', best_params)
