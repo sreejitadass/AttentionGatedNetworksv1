@@ -1,7 +1,7 @@
 {
   "training":{
     "arch_type": "segmentation",
-    "n_epochs": 10,
+    "n_epochs": 50,
     "save_epoch_freq": 1,
     "lr_policy": "step",
     "lr_decay_iters": 250,
@@ -31,6 +31,7 @@
   },
   "model":{
     "type":"seg",
+    "optim":"adam",
     "continue_train": false,
     "which_epoch": -1,
     "model_type": "unet_ct_multi_att_dsv",
@@ -44,7 +45,7 @@
     "gpu_ids": [0],
     "isTrain": true,
     "checkpoints_dir": "./checkpoints",
-    "experiment_name": "experiment_unet_grid_gating_segmentation",
+    "experiment_name": "experiment_unet_ct_multi_att_dsv_segmentation",
     "criterion": "dice_loss"
   }
 }
