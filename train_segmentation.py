@@ -104,16 +104,27 @@ def train(arguments):
     plot_metrics(stats)
 
 def plot_metrics(metrics):
-    for key in metrics['train']:
-        plt.figure()
-        for split in metrics:
-            plt.plot(metrics[split][key], label=split)
-        plt.legend()
-        plt.title(f"{key} vs. epoch")
-        plt.xlabel('epoch')
-        plt.ylabel(key)
-        os.makedirs('figs', exist_ok=True)
-        plt.savefig(f'figs/{key}.png')
+    plt.figure()
+    for split in metrics:
+        plt.plot(metrics[split]['Seg_Loss'], label=split)
+    plt.legend()
+    plt.title(f"Loss vs. epoch")
+    plt.xlabel('epoch')
+    plt.ylabel('SoftDiceLoss')
+    os.makedirs('figs', exist_ok=True)
+    plt.savefig(f'figs/Seg_Loss.png')
+
+    for key in metrics['validation']:
+        if key != 'Seg_Loss':
+            plt.figure()
+            for split in ['validation', 'test']:
+                plt.plot(metrics[split][key], label=split)
+            plt.legend()
+            plt.title(f"{key} vs. epoch")
+            plt.xlabel('epoch')
+            plt.ylabel(key)
+            os.makedirs('figs', exist_ok=True)
+            plt.savefig(f'figs/{key}.png')
 
 if __name__ == '__main__':
     import argparse
