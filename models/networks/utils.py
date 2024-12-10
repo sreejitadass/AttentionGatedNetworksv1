@@ -457,7 +457,7 @@ class HookBasedFeatureExtractor(nn.Module):
         else:
             self.inputs = i.data.clone()
             self.inputs_size = self.input.size()
-        print('Input Array Size: ', self.inputs_size)
+        #print('Input Array Size: ', self.inputs_size)
 
     def get_output_array(self, m, i, o):
         if isinstance(o, tuple):
@@ -466,7 +466,7 @@ class HookBasedFeatureExtractor(nn.Module):
         else:
             self.outputs = o.data.clone()
             self.outputs_size = self.outputs.size()
-        print('Output Array Size: ', self.outputs_size)
+        #print('Output Array Size: ', self.outputs_size)
 
     def rescale_output_array(self, newsize):
         us = nn.Upsample(size=newsize[2:], mode='bilinear')

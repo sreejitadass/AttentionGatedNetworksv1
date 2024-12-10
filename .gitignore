@@ -111,3 +111,6 @@ venv.bak/
 *~
 .#*
 flycheck*
+
+**/visualization/**
+**/checkpoints/**

@@ -71,3 +71,8 @@ def check_exceptions(image, label=None):
         print('Error: blank image, image.max = {0}'.format(image.max()))
         #print('Skip {0} {1}'.format(image_name, label_name))
         raise (Exception('blank image exception'))
+
+if __name__ == '__main__':
+    img, _, _ = load_mhd_image('/home/bhx5gh/Documents/MLIA/MLIA-Attention-Gated-Networks/data/Segmentation_data/Training/Labels/seg_0.mhd')
+    unique, counts = np.unique(arr, return_counts=True)
+    print(unique, counts)
