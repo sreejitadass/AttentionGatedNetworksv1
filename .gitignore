@@ -5,7 +5,7 @@ __pycache__/
 *.pyc
 
 # Saved results
-#checkpoints/
+checkpoints/
 #checkpoints_2/
 
 # C extensions

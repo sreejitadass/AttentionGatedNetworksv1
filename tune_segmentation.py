@@ -1,26 +1,50 @@
-import os
-import numpy
+import collections
+import json
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-
+import optuna
 
 from dataio.loader import get_dataset, get_dataset_path
 from dataio.transformation import get_dataset_transformation
-from utils.util import json_file_to_pyobj
-from utils.visualiser import Visualiser
 from utils.error_logger import ErrorLogger
-
 from models import get_model
 
-def train(arguments):
+def tune_segmentation():
+    study = optuna.create_study()
+    study.optimize(objective, n_trials=15)
+    return study.best_params, study.best_value
 
+# 759762 is 20 trials
+# 759763 is 15 trials
+# 759826 is 15 trials without batchsize
+
+def objective(trial):
     # Parse input arguments
-    json_filename = arguments.config
-    network_debug = arguments.debug
-
+    n_epochs = 3
+    batchSize = trial.suggest_categorical('batchSize', [16, 32])
+    feature_scale = trial.suggest_categorical('feature_scale', [2, 4, 8])
+    l2_reg_weight = trial.suggest_loguniform('l2_reg_weight', 1e-7, 1e-5)
+    lr_rate = trial.suggest_loguniform('lr_rate', 1e-5, 1e-3)
+    shift = trial.suggest_uniform('shift', 0.0, 0.2)
+    rotate = trial.suggest_uniform('rotate', 0.0, 30.0)
+    random_flip_prob = trial.suggest_uniform('random_flip_prob', 0.0, 0.5)
+    optim = trial.suggest_categorical('optim', ['adam', 'sgd'])
+    
     # Load options
-    json_opts = json_file_to_pyobj(json_filename)
+    json_opts_dict = json.load(open(args.config))
+
+    # set params
+    json_opts_dict["training"]["n_epochs"] = n_epochs
+    json_opts_dict["training"]["batchSize"] = batchSize
+    json_opts_dict["model"]["feature_scale"] = feature_scale
+    json_opts_dict["model"]["l2_reg_weight"] = l2_reg_weight
+    json_opts_dict["model"]["lr_rate"] = lr_rate
+    json_opts_dict["augmentation"]["segmentation"]["shift"] = [shift, shift]
+    json_opts_dict["augmentation"]["segmentation"]["rotate"] = rotate
+    json_opts_dict["augmentation"]["segmentation"]["random_flip_prob"] = random_flip_prob
+    json_opts_dict["model"]["optim"] = optim
+
+    json_opts = json_dict_to_pyobj(json_opts_dict)
     train_opts = json_opts.training
 
     # Architecture type
@@ -33,10 +57,6 @@ def train(arguments):
 
     # Setup the NN Model
     model = get_model(json_opts.model)
-    if network_debug:
-        print('# of pars: ', model.get_number_parameters())
-        print('fp time: {0:.3f} sec\tbp time: {1:.3f} sec per sample'.format(*model.get_fp_bp_time()))
-        exit()
 
     # Setup Data Loader
     train_dataset = ds_class(ds_path, split='train',      transform=ds_transform['train'], preload_data=train_opts.preloadData)
@@ -46,10 +66,8 @@ def train(arguments):
     valid_loader = DataLoader(dataset=valid_dataset, num_workers=16, batch_size=train_opts.batchSize, shuffle=False)
     test_loader  = DataLoader(dataset=test_dataset,  num_workers=16, batch_size=train_opts.batchSize, shuffle=False)
 
-    # Visualisation Parameters
-    #visualizer = Visualiser(json_opts.visualisation, save_dir=model.save_dir)
     error_logger = ErrorLogger()
-    stats = {'train': dict(), 'validation': dict(), 'test': dict()}
+    score = 0
 
     # Training Function
     model.set_scheduler(train_opts)
@@ -80,51 +98,20 @@ def train(arguments):
                 metrics = model.get_segmentation_stats()
                 error_logger.update({**errors, **metrics}, split=split)
 
-                # Visualise predictions
-                #visuals = model.get_current_visuals()
-                #visualizer.display_current_results(visuals, epoch=epoch, save_result=False)
+        score = error_logger.get_errors('validation')['Mean_IOU']
 
-        # Update the plots
-        for split in ['train', 'validation', 'test']:
-            print(f'Split: {split} | Errors: {error_logger.get_errors(split)}')
-            #visualizer.plot_current_errors(epoch, error_logger.get_errors(split), split_name=split)
-            #visualizer.print_current_errors(epoch, error_logger.get_errors(split), split_name=split)
-            for key, stat in error_logger.get_errors(split).items():
-                stats[split][key] = stats[split].get(key, []) + [stat]
         error_logger.reset()
-
-        # Save the model parameters
-        if epoch % train_opts.save_epoch_freq == 0:
-            model.save(epoch)
-            plot_metrics(stats)
 
         # Update the model learning rate
         model.update_learning_rate()
+    
+    return score
 
-    plot_metrics(stats)
 
-def plot_metrics(metrics):
-    plt.figure()
-    for split in metrics:
-        plt.plot(metrics[split]['Seg_Loss'], label=split)
-    plt.legend()
-    plt.title(f"Loss vs. epoch")
-    plt.xlabel('epoch')
-    plt.ylabel('SoftDiceLoss')
-    os.makedirs('figs', exist_ok=True)
-    plt.savefig(f'figs/Seg_Loss.png')
-
-    for key in metrics['validation']:
-        if key != 'Seg_Loss':
-            plt.figure()
-            for split in ['validation', 'test']:
-                plt.plot(metrics[split][key], label=split)
-            plt.legend()
-            plt.title(f"{key} vs. epoch")
-            plt.xlabel('epoch')
-            plt.ylabel(key)
-            os.makedirs('figs', exist_ok=True)
-            plt.savefig(f'figs/{key}.png')
+def json_dict_to_pyobj(dic):
+    def _json_object_hook(d): return collections.namedtuple('X', d.keys())(*d.values())
+    def json2obj(data): return json.loads(data, object_hook=_json_object_hook)
+    return json2obj(json.dumps(dic))
 
 if __name__ == '__main__':
     import argparse
@@ -132,7 +119,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='CNN Seg Training Function')
 
     parser.add_argument('-c', '--config',  help='training config file', required=True)
-    parser.add_argument('-d', '--debug',   help='returns number of parameters and bp/fp runtime', action='store_true')
     args = parser.parse_args()
 
-    train(args)
+    best_params, best_scores = tune_segmentation()
+    print('Best Parameters:', best_params)
+    print('Best Score:', best_scores)

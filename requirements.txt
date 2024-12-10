@@ -2,3 +2,5 @@ torchsample @ git+https://github.com/ozan-oktay/torchsample@master#egg=torchsamp
 opencv-python
 scikit-learn
 SimpleITK
+optuna
+matplotlib
