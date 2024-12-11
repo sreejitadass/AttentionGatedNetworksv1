@@ -14,5 +14,5 @@
 #SBATCH --mem=256G
 
 CONFIG_FILE=configs/config_attn_unet_segmentation.json
-source ENV/bin/activate
+source env.sh
 time python tune_segmentation.py -c $CONFIG_FILE

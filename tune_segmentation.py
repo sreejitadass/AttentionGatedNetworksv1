@@ -14,14 +14,10 @@ def tune_segmentation():
     study.optimize(objective, n_trials=15)
     return study.best_params, study.best_value
 
-# 759762 is 20 trials
-# 759763 is 15 trials
-# 759826 is 15 trials without batchsize
-
 def objective(trial):
     # Parse input arguments
     n_epochs = 3
-    batchSize = trial.suggest_categorical('batchSize', [16, 32])
+    batchSize = trial.suggest_categorical('batchSize', [8, 16])
     feature_scale = trial.suggest_categorical('feature_scale', [2, 4, 8])
     l2_reg_weight = trial.suggest_loguniform('l2_reg_weight', 1e-7, 1e-5)
     lr_rate = trial.suggest_loguniform('lr_rate', 1e-5, 1e-3)
