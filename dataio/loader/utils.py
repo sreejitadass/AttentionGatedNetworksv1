@@ -1,55 +1,57 @@
-import nibabel as nib
+# dataio/loader/utils.py
 import numpy as np
+import nibabel as nib
 import os
-from utils.util import mkdir
+
+def load_nifti_img(filepath, dtype=np.float32):
+    """
+    Load a NIfTI image file.
+
+    Args:
+        filepath (str): Path to the NIfTI file.
+        dtype (type): Data type for the output array (default: np.float32).
+
+    Returns:
+        tuple: (image_data, affine_matrix)
+    """
+    nim = nib.load(filepath)
+    out_nii_array = np.array(nim.get_fdata(), dtype=dtype)  # Use get_fdata() instead of get_data()
+    affine = nim.affine
+    return out_nii_array, affine
+
+def write_nifti_img(data, meta, out_dir):
+    """
+    Write a 3D volume as a NIfTI file.
+
+    Args:
+        data (np.ndarray): The 3D volume data.
+        meta (dict): Metadata including 'affine', 'pixdim', 'dim', 'name'.
+        out_dir (str): Output directory.
+    """
+    affine = meta['affine']  # Use the affine directly (already a NumPy array)
+    pixdim = meta['pixdim']
+    dim = meta['dim']
+    filename = meta['name']
+    filepath = os.path.join(out_dir, filename)
+
+    # Create NIfTI image
+    img = nib.Nifti1Image(data, affine)
+    img.header.set_zooms(pixdim[:3])  # Use only the first 3 values for zooms (x, y, z)
+    nib.save(img, filepath)
+
+    return filepath
+
+def check_exceptions(volume, label):
+    """
+    Check for exceptions in volume and label data.
+    """
+    if volume is None or label is None:
+        raise ValueError("Volume or label data is None")
+    if volume.shape != label.shape:
+        raise ValueError(f"Shape mismatch: volume {volume.shape} vs label {label.shape}")
 
 def is_image_file(filename):
-    return any(filename.endswith(extension) for extension in [".nii.gz"])
-
-
-def load_nifti_img(filepath, dtype):
-    '''
-    NIFTI Image Loader
-    :param filepath: path to the input NIFTI image
-    :param dtype: dataio type of the nifti numpy array
-    :return: return numpy array
-    '''
-    nim = nib.load(filepath)
-    out_nii_array = np.array(nim.get_data(),dtype=dtype)
-    out_nii_array = np.squeeze(out_nii_array) # drop singleton dim in case temporal dim exists
-    meta = {'affine': nim.get_affine(),
-            'dim': nim.header['dim'],
-            'pixdim': nim.header['pixdim'],
-            'name': os.path.basename(filepath)
-            }
-
-    return out_nii_array, meta
-
-
-def write_nifti_img(input_nii_array, meta, savedir):
-    mkdir(savedir)
-    affine = meta['affine'][0].cpu().numpy()
-    pixdim = meta['pixdim'][0].cpu().numpy()
-    dim    = meta['dim'][0].cpu().numpy()
-
-    img = nib.Nifti1Image(input_nii_array, affine=affine)
-    img.header['dim'] = dim
-    img.header['pixdim'] = pixdim
-
-    savename = os.path.join(savedir, meta['name'][0])
-    print('saving: ', savename)
-    nib.save(img, savename)
-
-
-def check_exceptions(image, label=None):
-    if label is not None:
-        if image.shape != label.shape:
-            print('Error: mismatched size, image.shape = {0}, '
-                  'label.shape = {1}'.format(image.shape, label.shape))
-            #print('Skip {0}, {1}'.format(image_name, label_name))
-            raise(Exception('image and label sizes do not match'))
-
-    if image.max() < 1e-6:
-        print('Error: blank image, image.max = {0}'.format(image.max()))
-        #print('Skip {0} {1}'.format(image_name, label_name))
-        raise (Exception('blank image exception'))
+    """
+    Check if a file is an image file.
+    """
+    return filename.lower().endswith(('.nii', '.nii.gz', '.dcm'))

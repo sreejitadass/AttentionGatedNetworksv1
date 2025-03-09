@@ -18,15 +18,12 @@ def get_optimizer(option, params):
                               momentum=0.9,
                               nesterov=True,
                               weight_decay=option.l2_reg_weight)
-
     if opt_alg == 'adam':
         optimizer = optim.Adam(params,
                                lr=option.lr_rate,
                                betas=(0.9, 0.999),
                                weight_decay=option.l2_reg_weight)
-
     return optimizer
-
 
 def get_criterion(opts):
     if opts.criterion == 'cross_entropy':
@@ -38,7 +35,6 @@ def get_criterion(opts):
         criterion = SoftDiceLoss(opts.output_nc)
     elif opts.criterion == 'dice_loss_pancreas_only':
         criterion = CustomSoftDiceLoss(opts.output_nc, class_ids=[0, 2])
-
     return criterion
 
 def recursive_glob(rootdir='.', suffix=''):
@@ -50,21 +46,18 @@ def recursive_glob(rootdir='.', suffix=''):
         for looproot, _, filenames in os.walk(rootdir)
         for filename in filenames if filename.endswith(suffix)]
 
-def poly_lr_scheduler(optimizer, init_lr, iter, lr_decay_iter=1, max_iter=30000, power=0.9,):
+def poly_lr_scheduler(optimizer, init_lr, iter, lr_decay_iter=1, max_iter=30000, power=0.9):
     """Polynomial decay of learning rate
         :param init_lr is base learning rate
         :param iter is a current iteration
         :param lr_decay_iter how frequently decay occurs, default is 1
         :param max_iter is number of maximum iterations
         :param power is a polymomial power
-
     """
     if iter % lr_decay_iter or iter > max_iter:
         return optimizer
-
     for param_group in optimizer.param_groups:
-        param_group['lr'] = init_lr*(1 - iter/max_iter)**power
-
+        param_group['lr'] = init_lr * (1 - iter/max_iter)**power
 
 def adjust_learning_rate(optimizer, init_lr, epoch):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
@@ -72,46 +65,54 @@ def adjust_learning_rate(optimizer, init_lr, epoch):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-
 def segmentation_stats(pred_seg, target):
+    """
+    Compute segmentation metrics: IoU and Dice score.
+    For binary segmentation (n_classes=2), returns a single foreground Dice score.
+    
+    Args:
+        pred_seg (torch.Tensor): Model prediction [B, C, H, W, D], C=2 for binary.
+        target (torch.Tensor): Ground truth [B, 1, H, W, D] with values 0, 1.
+    
+    Returns:
+        iou (dict): Contains 'overall_acc' and 'mean_iou'.
+        dice (float): Single foreground Dice score for binary case.
+    """
     n_classes = pred_seg.size(1)
-    pred_lbls = pred_seg.data.max(1)[1].cpu().numpy()
-    gt = np.squeeze(target.data.cpu().numpy(), axis=1)
+    pred_lbls = pred_seg.data.max(1)[1].cpu().numpy()  # [B, H, W, D]
+    gt = np.squeeze(target.data.cpu().numpy(), axis=1)  # [B, H, W, D]
     gts, preds = [], []
     for gt_, pred_ in zip(gt, pred_lbls):
         gts.append(gt_)
         preds.append(pred_)
 
     iou = segmentation_scores(gts, preds, n_class=n_classes)
-    dice = dice_score_list(gts, preds, n_class=n_classes)
-
-    return iou, dice
-
+    dice = dice_score_list(gts, preds, n_class=n_classes)  # Returns array of length n_classes
+    
+    if n_classes == 2:  # Binary segmentation
+        return iou, float(dice[1])  # Return foreground Dice as scalar
+    return iou, dice  # Multi-class case keeps array
 
 def classification_scores(gts, preds, labels):
-    accuracy        = metrics.accuracy_score(gts,  preds)
+    accuracy = metrics.accuracy_score(gts, preds)
     class_accuracies = []
-    for lab in labels: # TODO Fix
+    for lab in labels:
         class_accuracies.append(metrics.accuracy_score(gts[gts == lab], preds[gts == lab]))
     class_accuracies = np.array(class_accuracies)
 
-    f1_micro        = metrics.f1_score(gts,        preds, average='micro')
+    f1_micro = metrics.f1_score(gts, preds, average='micro')
     precision_micro = metrics.precision_score(gts, preds, average='micro')
-    recall_micro    = metrics.recall_score(gts,    preds, average='micro')
-    f1_macro        = metrics.f1_score(gts,        preds, average='macro')
+    recall_micro = metrics.recall_score(gts, preds, average='micro')
+    f1_macro = metrics.f1_score(gts, preds, average='macro')
     precision_macro = metrics.precision_score(gts, preds, average='macro')
-    recall_macro    = metrics.recall_score(gts,    preds, average='macro')
+    recall_macro = metrics.recall_score(gts, preds, average='macro')
 
-    # class wise score
-    f1s        = metrics.f1_score(gts,        preds, average=None)
+    f1s = metrics.f1_score(gts, preds, average=None)
     precisions = metrics.precision_score(gts, preds, average=None)
-    recalls    = metrics.recall_score(gts,    preds, average=None)
+    recalls = metrics.recall_score(gts, preds, average=None)
 
-    confusion = metrics.confusion_matrix(gts,preds, labels=labels)
-
-    #TODO confusion matrix, recall, precision
+    confusion = metrics.confusion_matrix(gts, preds, labels=labels)
     return accuracy, f1_micro, precision_micro, recall_micro, f1_macro, precision_macro, recall_macro, confusion, class_accuracies, f1s, precisions, recalls
-
 
 def classification_stats(pred_seg, target, labels):
     return classification_scores(target, pred_seg, labels)

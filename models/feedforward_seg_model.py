@@ -1,7 +1,6 @@
 import torch
 from torch.autograd import Variable
 import torch.optim as optim
-
 from collections import OrderedDict
 import utils.util as util
 from .base_model import BaseModel
@@ -10,10 +9,9 @@ from .layers.loss import *
 from .networks_other import get_scheduler, print_network, benchmark_fp_bp_time
 from .utils import segmentation_stats, get_optimizer, get_criterion
 from .networks.utils import HookBasedFeatureExtractor
-
+import numpy as np
 
 class FeedForwardSegmentation(BaseModel):
-
     def name(self):
         return 'FeedForwardSegmentation'
 
@@ -31,7 +29,8 @@ class FeedForwardSegmentation(BaseModel):
                                in_channels=opts.input_nc, nonlocal_mode=opts.nonlocal_mode,
                                tensor_dim=opts.tensor_dim, feature_scale=opts.feature_scale,
                                attention_dsample=opts.attention_dsample)
-        if self.use_cuda: self.net = self.net.cuda()
+        if self.use_cuda:
+            self.net = self.net.cuda()
 
         # load the model if a path is specified or it is in inference mode
         if not self.isTrain or opts.continue_train:
@@ -53,7 +52,6 @@ class FeedForwardSegmentation(BaseModel):
             self.optimizers.append(self.optimizer_S)
 
             # print the network details
-            # print the network details
             if kwargs.get('verbose', True):
                 print('Network is initialized')
                 print_network(self.net)
@@ -64,12 +62,11 @@ class FeedForwardSegmentation(BaseModel):
             print('Scheduler is added for optimiser {0}'.format(optimizer))
 
     def set_input(self, *inputs):
-        # self.input.resize_(inputs[0].size()).copy_(inputs[0])
         for idx, _input in enumerate(inputs):
             # If it's a 5D array and 2D model then (B x C x H x W x Z) -> (BZ x C x H x W)
             bs = _input.size()
             if (self.tensor_dim == '2D') and (len(bs) > 4):
-                _input = _input.permute(0,4,1,2,3).contiguous().view(bs[0]*bs[4], bs[1], bs[2], bs[3])
+                _input = _input.permute(0, 4, 1, 2, 3).contiguous().view(bs[0] * bs[4], bs[1], bs[2], bs[3])
 
             # Define that it's a cuda array
             if idx == 0:
@@ -80,13 +77,14 @@ class FeedForwardSegmentation(BaseModel):
 
     def forward(self, split):
         if split == 'train':
-            self.prediction = self.net(Variable(self.input))
+            self.prediction = self.net(self.input)
         elif split == 'test':
-            self.prediction = self.net(Variable(self.input, volatile=True))
+            with torch.no_grad():
+                self.prediction = self.net(self.input)
             # Apply a softmax and return a segmentation map
             self.logits = self.net.apply_argmax_softmax(self.prediction)
             self.pred_seg = self.logits.data.max(1)[1].unsqueeze(1)
-            
+
     def backward(self):
         self.loss_S = self.criterion(self.prediction, self.target)
         self.loss_S.backward()
@@ -94,19 +92,17 @@ class FeedForwardSegmentation(BaseModel):
     def optimize_parameters(self):
         self.net.train()
         self.forward(split='train')
-
         self.optimizer_S.zero_grad()
         self.backward()
         self.optimizer_S.step()
 
-    # This function updates the network parameters every "accumulate_iters"
     def optimize_parameters_accumulate_grd(self, iteration):
         accumulate_iters = int(2)
-        if iteration == 0: self.optimizer_S.zero_grad()
+        if iteration == 0:
+            self.optimizer_S.zero_grad()
         self.net.train()
         self.forward(split='train')
         self.backward()
-
         if iteration % accumulate_iters == 0:
             self.optimizer_S.step()
             self.optimizer_S.zero_grad()
@@ -123,13 +119,16 @@ class FeedForwardSegmentation(BaseModel):
     def get_segmentation_stats(self):
         self.seg_scores, self.dice_score = segmentation_stats(self.prediction, self.target)
         seg_stats = [('Overall_Acc', self.seg_scores['overall_acc']), ('Mean_IOU', self.seg_scores['mean_iou'])]
-        for class_id in range(self.dice_score.size):
-            seg_stats.append(('Class_{}'.format(class_id), self.dice_score[class_id]))
+        if isinstance(self.dice_score, (int, float)):
+            seg_stats.append(('Dice', float(self.dice_score)))
+        elif isinstance(self.dice_score, torch.Tensor) and len(self.dice_score.shape) == 0:
+            seg_stats.append(('Dice', self.dice_score.item()))
+        else:
+            raise ValueError(f"Expected scalar Dice score for binary segmentation, got {type(self.dice_score)} with value {self.dice_score}")
         return OrderedDict(seg_stats)
 
     def get_current_errors(self):
-        return OrderedDict([('Seg_Loss', self.loss_S.data[0])
-                            ])
+        return OrderedDict([('Seg_Loss', self.loss_S.item())])
 
     def get_current_visuals(self):
         inp_img = util.tensor2im(self.input, 'img')
@@ -140,17 +139,14 @@ class FeedForwardSegmentation(BaseModel):
         feature_extractor = HookBasedFeatureExtractor(self.net, layer_name, upscale)
         return feature_extractor.forward(Variable(self.input))
 
-    # returns the fp/bp times of the model
-    def get_fp_bp_time (self, size=None):
+    def get_fp_bp_time(self, size=None):
         if size is None:
             size = (1, 1, 160, 160, 96)
-
         inp_array = Variable(torch.zeros(*size)).cuda()
         out_array = Variable(torch.zeros(*size)).cuda()
         fp, bp = benchmark_fp_bp_time(self.net, inp_array, out_array)
-
         bsize = size[0]
-        return fp/float(bsize), bp/float(bsize)
+        return fp / float(bsize), bp / float(bsize)
 
     def save(self, epoch_label):
         self.save_network(self.net, 'S', epoch_label, self.gpu_ids)
